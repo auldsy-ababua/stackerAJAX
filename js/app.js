@@ -1,3 +1,5 @@
+//Lines 1 through 95 produce unanswered stack overflow questions
+
 // this function takes the question object returned by the StackOverflow request
 // and returns new result to be appended to DOM
 var showQuestion = function(question) {
@@ -66,7 +68,7 @@ var getUnanswered = function(tags) {
 	})
 	.done(function(result){ //this waits for the ajax to return with a succesful promise object
 		var searchResults = showSearchResults(request.tagged, result.items.length);
-
+			console.log(result);
 		$('.search-results').html(searchResults);
 		//$.each is a higher order function. It takes an array and a function as an argument.
 		//The function is executed once for each item in the array.
@@ -81,7 +83,6 @@ var getUnanswered = function(tags) {
 	});
 };
 
-
 $(document).ready( function() {
 	$('.unanswered-getter').submit( function(e){
 		e.preventDefault();
@@ -90,5 +91,73 @@ $(document).ready( function() {
 		// get the value of the tags the user submitted
 		var tags = $(this).find("input[name='tags']").val();
 		getUnanswered(tags);
+	});
+});
+
+//Lines 97 through X produce top answerers for a given tag on stack overflow
+
+var showTopAnswerers = function(answerer) {
+
+	// clone our result template code
+	var result = $('.templates .users').clone();
+
+	// Set the profile image properties in result
+	var profileImage = result.find('.profile-image img');
+	profileImage.attr("src", answerer.user.profile_image);
+
+
+	// set the reputation property in result
+	var reputation = result.find('.reputation');
+	reputation.text(answerer.user.reputation);
+	
+	// set the profile link of top answerer
+	var profileLink = result.find('.profile-link a');
+	profileLink.html(answerer.user.display_name);
+	profileLink.attr("href", answerer.user.link);
+
+	return result;
+};
+
+var getTopAnswerers = function(tags) {
+
+	// the parameters we need to pass in our request to StackOverflow's API
+	var request = {
+		tagged: tags,
+		site: 'stackoverflow',
+		order: 'desc',
+		sort: 'creation'
+	};
+
+	$.ajax({
+			url: "http://api.stackexchange.com/2.2/tags/" + tags + "/top-answerers/all_time?page=1&pagesize=20&site=stackoverflow",
+			dataType: "jsonp",//use jsonp to avoid cross origin issues
+			type: "GET",
+		})
+		.done(function(result){ //this waits for the ajax to return with a succesful promise object
+			var searchResults = showSearchResults(request.tagged, result.items.length);
+
+			$('.search-results').html(searchResults);
+			//$.each is a higher order function. It takes an array and a function as an argument.
+			//The function is executed once for each item in the array.
+			$.each(result.items, function(i, item) {
+				var question = showTopAnswerers(item);
+				$('.results').append(question);
+			});
+		})
+		.fail(function(jqXHR, error){ //this waits for the ajax to return with an error promise object
+			var errorElem = showError(error);
+			$('.search-results').append(errorElem);
+		});
+};
+
+
+$(document).ready(function(){
+	$('.inspiration-getter').submit( function(e){
+		e.preventDefault();
+		// zero out results if previous search has run
+		$('.results').html('');
+		// get the value of the tags the user submitted
+		var tags = $(this).find("input[name='answerers']").val();
+		getTopAnswerers(tags);
 	});
 });
